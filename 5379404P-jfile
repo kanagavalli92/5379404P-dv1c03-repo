@@ -22,13 +22,13 @@ pipeline {
             }
         }
 
-        // Stage 3: Web Server Setup (Fixed)
+        // Stage 3: Web Server Setup
         stage('5379404P-S3: Web Server Setup') {
             steps {
                 script {
                     sh '''
-                    sudo docker rm -f 5379404P-web-server || true
-                    sudo docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
+                    docker rm -f 5379404P-web-server || true
+                    docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
                     '''
                     echo "5379404P-S3: Web Server is setup and running using image 5379404p-temp-server-image"
                 }
