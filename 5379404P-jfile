@@ -22,17 +22,15 @@ pipeline {
             }
         }
 
-        // Stage 3: Web Server Setup
+        // Stage 3: Web Server Setup (Fixed)
         stage('5379404P-S3: Web Server Setup') {
             steps {
                 script {
-                    // Remove previous container if exists
                     sh '''
-                    docker rm -f 5379404P-web-server || true
-                    docker run -d --name 5379404P-web-server -p 32700:80 5379404P-temp-server-image
+                    sudo docker rm -f 5379404P-web-server || true
+                    sudo docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
                     '''
-                    // Echo message including image name
-                    echo "5379404P-S3: Web Server is setup and running using image 5379404P-temp-server-image"
+                    echo "5379404P-S3: Web Server is setup and running using image 5379404p-temp-server-image"
                 }
             }
         }
