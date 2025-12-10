@@ -8,14 +8,14 @@ pipeline {
     stages {
 
         // Stage 1: Release Environment
-        stage('5379404P-S1: Release Environment') {
+        stage('5379404P-S1') {
             steps {
                 echo "5379404P-S1: Release environment is ready."
             }
         }
 
         // Stage 2: Release Windows Check
-        stage('5379404P-S2: Release Windows Check') {
+        stage('5379404P-S2') {
             when { expression { return true } }  // Assume release window is met
             steps {
                 echo "5379404P-S2: Release Windows checked - Continue the pipeline"
@@ -23,34 +23,43 @@ pipeline {
         }
 
         // Stage 3: Web Server Setup
-        stage('5379404P-S3: Web Server Setup') {
-            steps {
-                script {
-                    sh '''
-                    docker rm -f 5379404P-web-server || true
-                    docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
-                    '''
-                    echo "5379404P-S3: Web Server is setup and running using image 5379404p-temp-server-image"
-                }
-            }
+        stage('5379404P-S3') {
+    steps {
+        script {
+            echo "5379404P-S3: Removing old container (if exists)..."
+            sh '''
+                if [ "$(docker ps -aq -f name=5379404P-web-server)" ]; then
+                    docker rm -f 5379404P-web-server
+                else
+                    echo "No previous container found."
+                fi
+            '''
+
+            echo "5379404P-S3: Starting new web server container..."
+            sh '''
+                docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
+            '''
         }
+    }
+}
+
 
         // Stage 4a: SQL Injection Test
-        stage('5379404P-S4A: SQL Injection Test') {
+        stage('5379404P-S4A') {
             steps {
                 echo "5379404P-S4A: SQL Injection (SQLi) Test – Report Generated"
             }
         }
 
         // Stage 4b: Cross-Site Scripting Test
-        stage('5379404P-S4B: Cross-Site Scripting Test') {
+        stage('5379404P-S4B') {
             steps {
                 echo "5379404P-S4B: Cross-Site Scripting (XSS) Test – Report Generated"
             }
         }
 
         // Stage 5: User Approval
-        stage('5379404P-S5: User Approval') {
+        stage('5379404P-S5') {
             steps {
                 script {
                     def userChoice = input(
@@ -69,7 +78,7 @@ pipeline {
         }
 
         // Stage 6: Next Phase Preparation
-        stage('5379404P-S6: Next Phase Preparation') {
+        stage('5379404P-S6') {
             when { expression { return env.CONTINUE_PIPELINE == 'true' } }
             steps {
                 echo "5379404P-S6: Getting ready for next phase"
