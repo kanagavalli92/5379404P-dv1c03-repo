@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        pollSCM('H/4 * * * *')  // Poll GitHub every 4 minutes
+        pollSCM('H/4 * * * *')
     }
 
     stages {
@@ -16,7 +16,7 @@ pipeline {
 
         // Stage 2: Release Windows Check
         stage('5379404P-S2') {
-            when { expression { return true } }  // Assume release window is met
+            when { expression { return true } }  // Release window always valid for this assignment
             steps {
                 echo "5379404P-S2: Release Windows checked - Continue the pipeline"
             }
@@ -24,37 +24,41 @@ pipeline {
 
         // Stage 3: Web Server Setup
         stage('5379404P-S3') {
-    steps {
-        script {
-            echo "5379404P-S3: Removing old container (if exists)..."
-            sh '''
-                if [ "$(docker ps -aq -f name=5379404P-web-server)" ]; then
-                    docker rm -f 5379404P-web-server
-                else
-                    echo "No previous container found."
-                fi
-            '''
-
-            echo "5379404P-S3: Starting new web server container..."
-            sh '''
-                docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
-            '''
-        }
-    }
-}
-
-
-        // Stage 4a: SQL Injection Test
-        stage('5379404P-S4A') {
             steps {
-                echo "5379404P-S4A: SQL Injection (SQLi) Test – Report Generated"
+                script {
+                    // Remove old container if exists
+                    sh '''
+                        if [ "$(docker ps -aq -f name=5379404P-web-server)" ]; then
+                            docker rm -f 5379404P-web-server
+                        fi
+                    '''
+
+                    // Start new web server container
+                    sh '''
+                        docker run -d --name 5379404P-web-server -p 32700:80 5379404p-temp-server-image
+                    '''
+
+                    echo "5379404P-S3: Web Server is setup and running"
+                }
             }
         }
 
-        // Stage 4b: Cross-Site Scripting Test
-        stage('5379404P-S4B') {
-            steps {
-                echo "5379404P-S4B: Cross-Site Scripting (XSS) Test – Report Generated"
+        // Stage 4 (Parallel Security Testing)
+        stage('5379404P-parallel-S4') {
+            parallel {
+
+                stage('5379404P-S4A') {
+                    steps {
+                        echo "5379404P-S4A: SQL Injection (SQLi) Test – Report Generated"
+                    }
+                }
+
+                stage('5379404P-S4B') {
+                    steps {
+                        echo "5379404P-S4B: Cross-Site Scripting (XSS) Test – Report Generated"
+                    }
+                }
+
             }
         }
 
@@ -65,8 +69,11 @@ pipeline {
                     def userChoice = input(
                         id: 'ProceedOrAbort',
                         message: "5379404P, after checking security reports, continue the pipeline?",
-                        parameters: [choice(name: 'Action', choices: ['Proceed','Abort'], description: '')]
+                        parameters: [
+                            choice(name: 'Action', choices: ['Proceed','Abort'], description: '')
+                        ]
                     )
+
                     if (userChoice == "Proceed") {
                         echo "5379404P-S5: Approve to continue the pipeline."
                         env.CONTINUE_PIPELINE = 'true'
